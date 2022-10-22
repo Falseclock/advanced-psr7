@@ -4,6 +4,7 @@
   "type": "library",
   "license": "MIT",
   "prefer-stable": true,
+  "homepage": "https://github.com/Falseclock/advanced-psr7",
   "authors": [
     {
       "name": "Nurlan Mukhanov",
