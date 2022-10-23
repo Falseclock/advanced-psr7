@@ -55,5 +55,14 @@
       <path value="$PROJECT_DIR$/vendor/sebastian/object-enumerator" />
     </include_path>
   </component>
+  <component name="PhpProjectServersManager">
+    <servers>
+      <server host="advanced-psr7.dev" id="1e36997f-b0fd-4f77-9bc1-99859de2c435" name="advanced-psr7.dev" use_path_mappings="true">
+        <path_mappings>
+          <mapping local-root="$PROJECT_DIR$" remote-root="/mnt/d/git/advanced-psr7" />
+        </path_mappings>
+      </server>
+    </servers>
+  </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.1" />
 </project>
