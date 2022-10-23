@@ -14,4 +14,5 @@ require __DIR__ . '/../vendor/autoload.php';
 $request = HttpRequest::fromGlobals();
 
 $body = $request->getParsedBody();
+
 phpinfo();

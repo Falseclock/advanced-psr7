@@ -7,8 +7,8 @@ declare(strict_types=1);
 namespace Falseclock\AdvancedPSR7;
 
 use DateTime;
-use Falseclock\AdvancedPSR7\Utils\DateUtils;
-use Falseclock\AdvancedPSR7\Utils\TextUtils;
+use Falseclock\Common\Lib\Utils\DateUtils;
+use Falseclock\Common\Lib\Utils\TextUtils;
 use GuzzleHttp\Psr7\CachingStream;
 use GuzzleHttp\Psr7\LazyOpenStream;
 use GuzzleHttp\Psr7\ServerRequest;
@@ -339,7 +339,7 @@ class HttpRequest extends ServerRequest
         if (isset($this->queryParams[$paramName])) {
             $array = json_decode(htmlspecialchars_decode($this->queryParams[$paramName]), true);
 
-            return $this->htmlSpecialChars($array);
+            return TextUtils::htmlSpecialChars($array);
         }
 
         return null;

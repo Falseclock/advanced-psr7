@@ -4,8 +4,55 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "12aaaa95561cc972ca83276651294cb9",
+    "content-hash": "ea835c7bb7dfe7a9ec9e36a752839fff",
     "packages": [
+        {
+            "name": "falseclock/common-library",
+            "version": "dev-master",
+            "dist": {
+                "type": "path",
+                "url": "../common-library",
+                "reference": "deed323079dbf766955230e2746e57f093174b0c"
+            },
+            "require": {
+                "ext-bcmath": "*",
+                "ext-intl": "*",
+                "ext-openssl": "*",
+                "php": ">=8.0"
+            },
+            "require-dev": {
+                "php-coveralls/php-coveralls": "^2.5.3",
+                "phpunit/phpunit": "9.5.25"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Falseclock\\Common\\Lib\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Falseclock\\Common\\Lib\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nurlan Mukhanov",
+                    "email": "nurike@gmail.com",
+                    "homepage": "https://github.com/Falseclock/",
+                    "role": "Author"
+                }
+            ],
+            "description": "Common libraries",
+            "homepage": "https://github.com/Falseclock/common-library",
+            "transport-options": {
+                "symlink": false,
+                "relative": true
+            }
+        },
         {
             "name": "guzzlehttp/psr7",
             "version": "2.4.1",
@@ -3400,12 +3447,15 @@
         }
     ],
     "aliases": [],
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "stability-flags": [],
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=8.1"
+        "php": ">=8.0",
+        "ext-intl": "*",
+        "ext-openssl": "*",
+        "ext-bcmath": "*"
     },
     "platform-dev": [],
     "plugin-api-version": "2.3.0"
