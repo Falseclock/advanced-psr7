@@ -25,7 +25,7 @@
     }
   ],
   "require": {
-    "php": ">=8.0",
+    "php": ">=7.4",
     "falseclock/common-library": "*",
     "guzzlehttp/psr7": "^2.4.1",
     "ext-intl": "*",

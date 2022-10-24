@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ea835c7bb7dfe7a9ec9e36a752839fff",
+    "content-hash": "382896295f7920c03513dccabfb3eb82",
     "packages": [
         {
             "name": "falseclock/common-library",
@@ -12,13 +12,13 @@
             "dist": {
                 "type": "path",
                 "url": "../common-library",
-                "reference": "deed323079dbf766955230e2746e57f093174b0c"
+                "reference": "72727c6a4d0c8e1072b07ae3484a7363731d71dd"
             },
             "require": {
                 "ext-bcmath": "*",
                 "ext-intl": "*",
                 "ext-openssl": "*",
-                "php": ">=8.0"
+                "php": ">=7.4"
             },
             "require-dev": {
                 "php-coveralls/php-coveralls": "^2.5.3",
@@ -3452,7 +3452,7 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=8.0",
+        "php": ">=7.4",
         "ext-intl": "*",
         "ext-openssl": "*",
         "ext-bcmath": "*"

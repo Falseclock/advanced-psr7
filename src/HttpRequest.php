@@ -1,6 +1,9 @@
-<?php /** @noinspection RegExpRedundantEscape */
-/** @noinspection RegExpSingleCharAlternation */
-/** @noinspection RegExpUnnecessaryNonCapturingGroup */
+<?php
+/**
+ * @noinspection RegExpRedundantEscape
+ * @noinspection RegExpSingleCharAlternation
+ * @noinspection RegExpUnnecessaryNonCapturingGroup
+ */
 
 declare(strict_types=1);
 
@@ -13,19 +16,25 @@ use GuzzleHttp\Psr7\CachingStream;
 use GuzzleHttp\Psr7\LazyOpenStream;
 use GuzzleHttp\Psr7\ServerRequest;
 use Psr\Http\Message\ServerRequestInterface;
+use stdClass;
 
 class HttpRequest extends ServerRequest
 {
+    /*
     const MAX_INT16_VALUE = 32767;
     const MAX_INT32_VALUE = 2147483647;
     const MAX_INT64_VALUE = 9223372036854775807;
     const MAX_INT8_VALUE = 127;
+*/
+
+    /** @var array merged array of $_POST and $_GET values */
+    protected array $input = [];
 
     /**
      * @return ServerRequestInterface
      * @inheritDoc
      */
-    public static function fromGlobals(): ServerRequestInterface
+    public static function fromGlobals(): HttpRequest
     {
         $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
         $headers = getallheaders();
@@ -35,11 +44,38 @@ class HttpRequest extends ServerRequest
 
         $serverRequest = new HttpRequest($method, $uri, $headers, $body, $protocol, $_SERVER);
 
+        /** @noinspection PhpPossiblePolymorphicInvocationInspection */
         return $serverRequest
             ->withCookieParams($_COOKIE)
             ->withQueryParams($_GET)
             ->withParsedBody($_POST)
-            ->withUploadedFiles(self::normalizeFiles($_FILES));
+            ->withUploadedFiles(self::normalizeFiles($_FILES))
+            ->withInput();
+    }
+
+    /**
+     * Combine $_POST and $_GET
+     * @return HttpRequest
+     */
+    private function withInput(): HttpRequest
+    {
+        $new = clone $this;
+        $new->input = $this->getQueryParams();
+
+        $post = $new->getParsedBody();
+
+        if (is_array($post))
+            $new->input = array_merge($new->input, $post);
+
+        return $new;
+    }
+
+    /**
+     * @return array
+     */
+    public function getInput(): array
+    {
+        return $this->input;
     }
 
     /**
@@ -51,8 +87,8 @@ class HttpRequest extends ServerRequest
      */
     public function dropInputVar(string $paramName): ServerRequestInterface
     {
-        if (isset($this->queryParams[$paramName]))
-            $this->queryParams[$paramName] = null;
+        if (isset($this->input[$paramName]))
+            unset($this->input[$paramName]);
 
         return $this;
     }
@@ -67,8 +103,8 @@ class HttpRequest extends ServerRequest
      */
     public function getInputVar(string $paramName, $defaultValue = null): mixed
     {
-        if (isset($this->queryParams[$paramName]))
-            return $this->queryParams[$paramName];
+        if (isset($this->input[$paramName]))
+            return $this->input[$paramName];
 
         return $defaultValue;
     }
@@ -76,7 +112,6 @@ class HttpRequest extends ServerRequest
     /**
      * Функция проверяет наличие значения
      * - если значение есть, то возвращается true, иначе - false
-     *
      * @param string $paramName
      * @param bool $defaultValue
      *
@@ -84,27 +119,27 @@ class HttpRequest extends ServerRequest
      */
     public function getInputVarBoolean(string $paramName, bool $defaultValue = false): bool
     {
-        if (isset($this->queryParams[$paramName]))
-            return filter_var($this->queryParams[$paramName], FILTER_VALIDATE_BOOLEAN);
+        if (isset($this->input[$paramName]))
+            return filter_var($this->input[$paramName], FILTER_VALIDATE_BOOLEAN);
 
         return $defaultValue;
     }
 
     /**
      * @param string $paramName
-     * @param string $dateFormat
      * @param DateTime|null $defaultValue
+     * @param string $dateFormat
      *
      * @return DateTime|null
      */
-    public function getInputVarDate(string $paramName, string $dateFormat = "Y-m-d", DateTime $defaultValue = null): ?DateTime
+    public function getInputVarDate(string $paramName, DateTime $defaultValue = null, string $dateFormat = "Y-m-d"): ?DateTime
     {
-        if (isset($this->queryParams[$paramName])) {
+        if (isset($this->input[$paramName])) {
 
-            if (DateUtils::isDateStringValid($this->queryParams[$paramName]))
+            if (!DateUtils::isDateStringValid($this->input[$paramName]))
                 return $defaultValue ?? null;
 
-            return DateTime::createFromFormat($dateFormat, $this->queryParams[$paramName]) ?? null;
+            return DateTime::createFromFormat($dateFormat, $this->input[$paramName]) ?? null;
         }
 
         return $defaultValue ?? null;
@@ -118,21 +153,13 @@ class HttpRequest extends ServerRequest
      *
      * @return string|null
      */
-    public function getInputVarDigit(string $paramName, string $defaultValue = null): ?string
+    public function getInputVarDigit(string $paramName, string $defaultValue = null): string|null
     {
-        if (isset($this->queryParams[$paramName])) {
-            $out = $this->queryParams[$paramName];
+        if (isset($this->input[$paramName])) {
 
-            if (is_array($out)) {
-                foreach ($out as &$value) {
-                    $value = preg_replace("/[^0-9]/", "", $value);
-                }
-            } else {
-                //к типу
-                $out = preg_replace("/[^0-9]/", "", $out);
-            }
+            $this->input[$paramName] = (string)preg_replace("/[^0-9]/", "", $this->input[$paramName]);
 
-            return (string)$out;
+            return $this->input[$paramName];
         }
 
         return $defaultValue;
@@ -145,11 +172,11 @@ class HttpRequest extends ServerRequest
      */
     public function getInputVarEmail(string $paramName): ?string
     {
-        if (isset($this->queryParams[$paramName])) {
-            if (!TextUtils::isEmailValid($this->queryParams[$paramName]))
+        if (isset($this->input[$paramName])) {
+            if (!TextUtils::isEmailValid($this->input[$paramName]))
                 return null;
             else
-                return $this->queryParams[$paramName];
+                return $this->input[$paramName];
         }
 
         return null;
@@ -161,185 +188,46 @@ class HttpRequest extends ServerRequest
      * @param string $paramName Наименование переменной, которая присутствует в POST или GET
      * @param float|null $defaultValue Значение по умолчанию, если переменная не была задана
      *
-     * @return float
+     * @return float|null
      */
     public function getInputVarFloat(string $paramName, float $defaultValue = null): ?float
     {
-        if (isset($this->queryParams[$paramName])) {
-            $out = $this->queryParams[$paramName];
+        if (isset($this->input[$paramName]))
+            return TextUtils::toFloat((string)$this->input[$paramName]);
 
-            if (is_array($this->queryParams[$paramName]))
-                $out = $out[$this->queryParams[$paramName]];
+        return $defaultValue;
+    }
 
-            return TextUtils::toFloat($out);
+    /**
+     * Получение чисел
+     *
+     * @param string $paramName
+     * @param int|null $defaultValue
+     * @return int|null
+     */
+    public function getInputVarInt(string $paramName, int $defaultValue = null): int|null
+    {
+        if (isset($this->input[$paramName]) and $this->input[$paramName] != "") {
+
+            $integer = $this->input[$paramName];
+
+            return intval(preg_replace("/[^0-9]/", "", (string)$integer));
         }
 
         return $defaultValue;
     }
 
     /**
-     * Получение чисел 1-byte integer
-     *
      * @param string $paramName
-     * @param int|int[]|null $defaultValue
-     * @param bool $removeZeroValues
-     * @param bool $removeDuplicates
-     * @param int $maxArrayLength
-     *
-     * @return int|int[]|null
+     * @param bool $associative
+     * @return array|stdClass|null
      */
-    public function getInputVarInt8(string $paramName, $defaultValue = null, bool $removeZeroValues = false, bool $removeDuplicates = false, int $maxArrayLength = -1)
+    public function getInputVarJson(string $paramName, bool $associative = true): mixed
     {
-        $int = $this->getInputVarInt64($paramName, $defaultValue, $removeZeroValues, $removeDuplicates, $maxArrayLength);
+        if (isset($this->input[$paramName])) {
+            return json_decode(htmlspecialchars_decode($this->input[$paramName]), $associative);
 
-        return $this->filterInt($int, $defaultValue, $removeZeroValues, $removeDuplicates, $maxArrayLength, self::MAX_INT8_VALUE);
-    }
-
-    /**
-     * Получение чисел 2-byte integer
-     *
-     * @param string $paramName
-     * @param int|int[]|null $defaultValue
-     * @param bool $removeZeroValues
-     * @param bool $removeDuplicates
-     * @param int $maxArrayLength
-     *
-     * @return int|int[]|null
-     */
-    public function getInputVarInt16(string $paramName, $defaultValue = null, bool $removeZeroValues = false, bool $removeDuplicates = false, int $maxArrayLength = -1)
-    {
-        $int = $this->getInputVarInt64($paramName, $defaultValue, $removeZeroValues, $removeDuplicates, $maxArrayLength);
-
-        return $this->filterInt($int, $defaultValue, $removeZeroValues, $removeDuplicates, $maxArrayLength, self::MAX_INT16_VALUE);
-    }
-
-    /**
-     * Получение чисел 4-byte integer
-     *
-     * @param string $paramName
-     * @param int|int[]|null $defaultValue
-     * @param bool $removeZeroValues
-     * @param bool $removeDuplicates
-     * @param int $maxArrayLength
-     *
-     * @return int|int[]|null
-     */
-    public function getInputVarInt32(string $paramName, $defaultValue = null, bool $removeZeroValues = false, bool $removeDuplicates = false, int $maxArrayLength = -1)
-    {
-        $int = $this->getInputVarInt64($paramName, $defaultValue, $removeZeroValues, $removeDuplicates, $maxArrayLength);
-
-        return $this->filterInt($int, $defaultValue, $removeZeroValues, $removeDuplicates, $maxArrayLength, self::MAX_INT32_VALUE);
-    }
-
-    /**
-     * @param int|int[] $int
-     * @param int|int[]|null $defaultValue
-     * @param bool $removeZeroValues
-     * @param bool $removeDuplicates
-     * @param int $maxArrayLength
-     * @param int $maxValue
-     *
-     * @return array|int|mixed|null
-     */
-    private function filterInt($int, $defaultValue, bool $removeZeroValues, bool $removeDuplicates, int $maxArrayLength, int $maxValue)
-    {
-        if (is_array($int)) {
-            foreach ($int as $index => $value) {
-                if ($removeZeroValues && $value == 0) {
-                    unset($int[$index]);
-                    continue;
-                }
-                if ($value > $maxValue) {
-                    unset($int[$index]);
-                }
-            }
-            if ($removeDuplicates) {
-                $int = array_unique($int);
-            }
-
-            if ($maxArrayLength > 0) {
-                if (count($int) > $maxArrayLength) {
-                    //throw new Exception("Длина массива больше разрешенной");
-                    return $defaultValue;
-                }
-            }
-
-            return count($int) ? $int : $defaultValue;
-        } else {
-            if ($int <= $maxValue) {
-                if ($removeZeroValues and $int == 0) {
-                    return null;
-                }
-
-                return $int;
-            }
-        }
-
-        return $defaultValue;
-    }
-
-    /**
-     * Функция выбирает значение, приведя его к integer
-     *
-     * @param string $paramName Наименование переменной, которая присутствует в POST или GET
-     * @param int|int[]|null $defaultValue Значение по умолчанию, если переменная не была задана
-     * @param bool $removeZeroValues
-     * @param bool $removeDuplicates
-     * @param int $maxArrayLength
-     *
-     * @return int|int[]|null
-     */
-    public function getInputVarInt64(string $paramName, $defaultValue = null, bool $removeZeroValues = false, bool $removeDuplicates = false, int $maxArrayLength = -1)
-    {
-
-        if (isset($this->queryParams[$paramName]) and $this->queryParams[$paramName] != "") {
-            $out = $this->queryParams[$paramName];
-
-            if (is_array($out)) {
-                foreach ($out as &$value) {
-                    $value = intval(preg_replace("/[^0-9]/", "", $value));
-                }
-            } else {
-                //к типу
-                $out = intval(preg_replace("/[^0-9]/", "", $out));
-            }
-
-            if (is_array($out)) {
-                if ($removeDuplicates) {
-                    $out = array_unique($out, SORT_NUMERIC);
-                }
-                if ($removeZeroValues) {
-                    $out = array_values(array_diff($out, [0]));
-                }
-                if ($maxArrayLength > 0) {
-                    if (count($out) > $maxArrayLength) {
-                        return $defaultValue;
-                        //throw new Exception("Длина массива больше разрешенной");
-                    }
-                }
-
-                if (!count($out)) {
-                    return null;
-                }
-            }
-
-            return $out;
-        }
-
-        return $defaultValue;
-    }
-
-    /**
-     * @param $paramName
-     *
-     * @return array|string|null
-     */
-    public function getInputVarJson($paramName)
-    {
-        if (isset($this->queryParams[$paramName])) {
-            $array = json_decode(htmlspecialchars_decode($this->queryParams[$paramName]), true);
-
-            return TextUtils::htmlSpecialChars($array);
+            //return TextUtils::htmlSpecialChars($array);
         }
 
         return null;
@@ -349,40 +237,21 @@ class HttpRequest extends ServerRequest
      * Функция выводить значение предварительно отфильтровав его и обрезав, если нужно
      *
      * @param string $paramName Наименование переменной, которая присутствует в POST или GET
-     * @param int $length Макисмальная дозволенная длина строковой переменной
      * @param string|null $defaultValue
-     * @param string|null $pattern
-     * @param boolean $filterHtml Фильтрация HTML символов для предотвращения XSS атак.
-     *
+     * @param int $maxLength
+     * @param bool $stripTags
      * @return string|null
      */
-    public function getInputVarStr(string $paramName, int $length = 4096, string $defaultValue = null, string $pattern = null, bool $filterHtml = true): ?string
+    public function getInputVarString(string $paramName, string $defaultValue = null, int $maxLength = 4096, bool $stripTags = true): ?string
     {
-        if (isset($this->queryParams[$paramName])) {
-            $out = trim($this->queryParams[$paramName]);
+        if (isset($this->input[$paramName])) {
 
-            if ($length) {
-                $out = mb_substr($out, 0, $length);
-            }
+            $string = mb_substr($this->input[$paramName], 0, $maxLength);
 
-            //разэкранирование
-            //if(get_magic_quotes_gpc()) {
-            //	$out = stripslashes($out);
-            //}
+            if ($stripTags)
+                $string = strip_tags($string);
 
-            if (isset($pattern)) {
-                if (!preg_match($pattern, $out)) {
-                    return $defaultValue;
-                }
-            }
-
-            //преобразование в спецсимволы
-            if ($filterHtml == true) {
-                //фильтрация тэгов
-                $out = strip_tags($out);
-            }
-
-            return $out;
+            return $string;
         }
 
         return $defaultValue;
@@ -390,66 +259,56 @@ class HttpRequest extends ServerRequest
 
     /**
      * @param string $paramName
-     * @param string|null $defaultValue
      * @param bool $sanitize
      *
      * @return string|null
-     * @todo сделать возможность массива
      */
-    public function getInputVarUrl(string $paramName, string $defaultValue = null, bool $sanitize = true): ?string
+    public function getInputVarUrl(string $paramName, bool $sanitize = true): string|null
     {
-
-        if (isset($this->queryParams[$paramName])) {
-            if (!is_scalar($this->queryParams[$paramName]))
-                return $defaultValue;
-
-            $url = trim($this->queryParams[$paramName]);
+        if (isset($this->input[$paramName])) {
+            $url = trim($this->input[$paramName]);
 
             if (strlen($url) > 2048)
-                return $defaultValue;
+                return null;
 
-            $path = parse_url($url, PHP_URL_PATH);
-            $encoded_path = array_map('urlencode', explode('/', $path));
-            $url = str_replace($path, implode('/', $encoded_path), $url);
+            if (!filter_var($url, FILTER_VALIDATE_URL))
+                return null;
 
-            // Remove all illegal characters from a url
+            //$path = parse_url($url, PHP_URL_PATH);
+            //$encoded_path = array_map('urlencode', explode('/', $path));
+            //$url = str_replace($path, implode('/', $encoded_path), $url);
+
+            // Remove all illegal characters from an url
             if ($sanitize)
                 $url = filter_var($url, FILTER_SANITIZE_URL);
 
-            if (filter_var($url, FILTER_VALIDATE_URL))
-                return $url;
+            return $url;
         }
 
-        return $defaultValue;
+        return null;
     }
 
     /**
      * Функция выбирает значение, приведя его к UUID
      *
      * @param string $paramName Наименование переменной, которая присутствует в POST или GET
-     * @param float|null $defaultValue Значение по умолчанию, если переменная не была задана
-     *
      * @return string|null
      */
-    public function getInputVarUUID(string $paramName, $defaultValue = null)
+    public function getInputVarUUID(string $paramName): string|null
     {
-        if (isset($this->queryParams[$paramName])) {
-            $out = $this->queryParams[$paramName];
-
-            if (is_array($this->queryParams[$paramName])) {
-                $out = $out[$this->queryParams[$paramName]];
-            }
+        if (isset($this->input[$paramName])) {
+            $out = $this->input[$paramName];
 
             //к типу
-            $out = strtolower(trim($out));
-            if (!preg_match('/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/', $out)) {
-                return $defaultValue;
+            $uuid = strtolower(trim($out));
+            if (!preg_match('/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/', $uuid)) {
+                return null;
             }
 
-            return $out;
+            return $uuid;
         }
 
-        return $defaultValue;
+        return null;
     }
 
     /**
@@ -460,9 +319,9 @@ class HttpRequest extends ServerRequest
      *
      * @return $this
      */
-    public function setInputVar(string $paramName, $value): HttpRequest
+    public function setInputVar(string $paramName, mixed $value): HttpRequest
     {
-        $this->queryParams[$paramName] = $value;
+        $this->input[$paramName] = $value;
 
         return $this;
     }

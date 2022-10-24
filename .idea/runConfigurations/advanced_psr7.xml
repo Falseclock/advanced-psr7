@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="advanced-psr7" type="PhpRemoteDebugRunConfigurationType" factoryName="PHP Remote Debug" filter_connections="FILTER" server_name="advanced-psr7" session_id="PHPSTORM">
+    <method v="2" />
+  </configuration>
+</component>

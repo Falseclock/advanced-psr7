@@ -58,12 +58,17 @@
   </component>
   <component name="PhpProjectServersManager">
     <servers>
-      <server host="advanced-psr7.dev" id="1e36997f-b0fd-4f77-9bc1-99859de2c435" name="advanced-psr7.dev" use_path_mappings="true">
+      <server host="advanced-psr7" id="1e36997f-b0fd-4f77-9bc1-99859de2c435" name="advanced-psr7" use_path_mappings="true">
         <path_mappings>
-          <mapping local-root="$PROJECT_DIR$" remote-root="/mnt/d/git/advanced-psr7" />
+          <mapping local-root="$PROJECT_DIR$" remote-root="/mnt/d/Desktop/OMoney/git/advanced-psr7" />
         </path_mappings>
       </server>
     </servers>
   </component>
-  <component name="PhpProjectSharedConfiguration" php_language_level="8.0" />
+  <component name="PhpProjectSharedConfiguration" php_language_level="8.1" />
+  <component name="PhpUnit">
+    <phpunit_settings>
+      <PhpUnitSettings load_method="PHPUNIT_PHAR" configuration_file_path="$PROJECT_DIR$/phpunit.xml.dist" custom_loader_path="$PROJECT_DIR$/vendor/autoload.php" phpunit_phar_path="$PROJECT_DIR$/phpunit.phar" use_configuration_file="true" />
+    </phpunit_settings>
+  </component>
 </project>

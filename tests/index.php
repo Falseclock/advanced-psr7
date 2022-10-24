@@ -14,5 +14,11 @@ require __DIR__ . '/../vendor/autoload.php';
 $request = HttpRequest::fromGlobals();
 
 $body = $request->getParsedBody();
+$params = $request->getQueryParams();
+$content = $request->getBody()->getContents();
+$files = $request->getUploadedFiles();
+$input = $request->getInput();
+
+$test = $request->getInputVarString("Route");
 
 phpinfo();

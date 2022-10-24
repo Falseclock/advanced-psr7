@@ -73,3 +73,6 @@ fabric.properties
 
 /vendor/
 /composer.phar
+/phpunit.phar
+/.phpunit.result.cache
+/build/

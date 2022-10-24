@@ -1,0 +1,46 @@
+### Send POST request with json body
+POST http://advanced-psr7
+Content-Type: application/json
+
+{
+  "id": 999,
+  "value": "content"
+}
+
+### Send POST request with body as parameters
+POST http://advanced-psr7/?Route=route_path
+Content-Type: application/x-www-form-urlencoded
+
+id=999&value=content&multi[]=1&multi[]=2&multi[]=3
+
+### Send a form with the text and file fields
+POST http://advanced-psr7
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="field"
+Content-Type: text/plain
+
+value
+--WebAppBoundary
+Content-Disposition: form-data; name="multi[]"
+Content-Type: text/plain
+
+m1
+--WebAppBoundary
+Content-Disposition: form-data; name="multi[]"
+Content-Type: text/plain
+
+m2
+--WebAppBoundary
+Content-Disposition: form-data; name="multi[]"
+Content-Type: text/plain
+
+m3
+--WebAppBoundary
+Content-Disposition: form-data; name="data"; filename="xdebug.ini"
+Content-Type: application/json
+
+< ./xdebug.ini
+--WebAppBoundary--
+
